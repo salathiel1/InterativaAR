@@ -1,6 +1,11 @@
 # Built application files
 *.apk
 *.ap_
+*.arr
+
+# OpenCV native library
+*.a
+*.so
 
 # Files for the ART/Dalvik VM
 *.dex
