@@ -10,10 +10,12 @@ package salathiel.interativaarlib.models;
 import salathiel.interativaarlib.api.ApproximationListener;
 import salathiel.interativaarlib.api.MovementListener;
 import salathiel.interativaarlib.api.OcclusionListener;
-import salathiel.interativaarlib.lib.MatrixUtil;
+import salathiel.interativaarlib.util.MatrixUtil;
 
 public class InteractiveObject {
-    
+
+    private static int UNIQUE_ID = 0;
+
 	//numero de identificacao unico do objeto
     private int id;
 	//marcador visivel
@@ -40,6 +42,11 @@ public class InteractiveObject {
         this.alreadyVisible = false;
         this.triggerOcclusion = true;
         this.transformationMatrix = MatrixUtil.identity();
+    }
+
+    public InteractiveObject(){
+        this(UNIQUE_ID);
+        UNIQUE_ID++;
     }
 
     //retorna id unico

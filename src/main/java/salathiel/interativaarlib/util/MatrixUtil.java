@@ -1,4 +1,4 @@
-package salathiel.interativaarlib.lib;
+package salathiel.interativaarlib.util;
 
 /**
  * Created by salathiel on 23/09/17.

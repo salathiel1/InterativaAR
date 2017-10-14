@@ -1,6 +1,9 @@
 package salathiel.interativaarlib.lib;
 
-import android.os.AsyncTask;
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
+import android.hardware.SensorManager;
 import android.util.Log;
 
 import org.opencv.android.OpenCVLoader;
@@ -12,37 +15,54 @@ import java.util.List;
 
 import salathiel.interativaarlib.models.InteractiveObject;
 import salathiel.interativaarlib.models.MovementCheckerItem;
+import salathiel.interativaarlib.util.MatrixUtil;
+import salathiel.interativaarlib.util.MovementCheckerUtil;
 
 //padrao getinstance
 
 //classe principal, responsavel pela logica da lib
-public class InteracaoLib {
-    private static final int MOVEMENT_THREADS = 4;
-    private static int movMinFrames = 30;
+public class InterativaLib implements SensorEventListener {
+    private static final String TAG = "interativa";
+    private static final int MOVEMENT_THREADS = 20;
+    private static InterativaLib instance;
 
-    //marcadores que a biblioteca ira 'monitorar'
     private List<InteractiveObject> iobjects;
     private float[][] projectionMatrix;
     private int screenWidth;
     private int screenHeight;
     private MovementCheckerThread[] movimentThreads;
     private int ithread;
+    private boolean processFrame;
+    private Mat prevgray;
+    private Sensor gyroscopeSensor;
+    private boolean screenRotating;
+    private float gyroError;
 
-    public InteracaoLib(){
-        if(OpenCVLoader.initDebug()) Log.d("ocv", "Iniciado");
-        else Log.d("ocv", "Erro");
+    public InterativaLib(){
+        if(OpenCVLoader.initDebug()) Log.d(TAG, "Ok!");
+        else Log.d(TAG, "Error!");
         iobjects = new ArrayList<>();
         screenWidth = 0;
         screenHeight = 0;
         movimentThreads = new MovementCheckerThread[MOVEMENT_THREADS];
         ithread = 0;
+        processFrame = true;
+        prevgray = null;
+        screenRotating = false;
+        gyroError = 0.03f;
     }
 
-    public InteracaoLib(float[][] projectionMatrix, int screenWidth, int screenHeight){
+    public InterativaLib(float[][] projectionMatrix, int screenWidth, int screenHeight){
         this();
         this.projectionMatrix = projectionMatrix;
         this.screenWidth = screenWidth;
         this.screenHeight = screenHeight;
+    }
+
+    public static synchronized InterativaLib getInstance(){
+        if(instance == null)
+            instance = new InterativaLib();
+        return instance;
     }
 
     public List<InteractiveObject> getIobjects() {
@@ -113,11 +133,16 @@ public class InteracaoLib {
 
     public void update(Mat cameraImage){
         update();
+        if(screenRotating) return;
+
+        processFrame = !processFrame;
+        if(!processFrame) prevgray = cameraImage;
+
         if(cameraImage != null && (!cameraImage.empty()) && projectionMatrix != null
-                && screenWidth > 0 && screenHeight > 0) {
-            MovementCheckerItem mci = new MovementCheckerItem(iobjects, cameraImage, projectionMatrix, screenWidth, screenHeight);
+                && screenWidth > 0 && screenHeight > 0 && processFrame) {
+            MovementCheckerItem mci = new MovementCheckerItem(iobjects, cameraImage, prevgray, projectionMatrix, screenWidth, screenHeight);
             if(movimentThreads[ithread] == null){
-                movimentThreads[ithread] = new MovementCheckerThread(movMinFrames/MOVEMENT_THREADS);
+                movimentThreads[ithread] = new MovementCheckerThread();
                 movimentThreads[ithread].addFrame2Check(mci);
                 new Thread(movimentThreads[ithread]).start();
             }else{
@@ -140,29 +165,36 @@ public class InteracaoLib {
         ApproximationChecker.minDistance = minDistance;
     }
 
-    public void setMovementPyr_scale(float pyr_scale){
-        MovementChecker.pyr_scale = pyr_scale;
+    public void setMovementRigor(int rigor){
+        MovementCheckerUtil.winsize = rigor;
     }
 
-    public void setMovementLevels(int levels){
-        MovementChecker.levels = levels;
+    public void setDebugMovementMaxFrameSave(int frames){
+        MovementCheckerUtil.maxFrameSave = frames;
     }
 
-    public void setMovementWinsize(int winsize){
-        MovementChecker.winsize = winsize;
+    public void useGyroMovement(SensorManager sensorManager){
+        gyroscopeSensor = sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
+        sensorManager.registerListener(this, gyroscopeSensor, SensorManager.SENSOR_DELAY_NORMAL);
     }
 
-    public void setMovementIterations(int iterations){
-        MovementChecker.iterations = iterations;
+    public void setGyroError(float gyroError) {
+        this.gyroError = gyroError;
     }
 
-    public void setMovementStep(int step){
-        MovementChecker.step = step;
+    @Override
+    public void onSensorChanged(SensorEvent event) {
+        if (event.values[0] > gyroError || event.values[0] < -gyroError){
+            screenRotating = true;
+        }else if(event.values[1] > gyroError || event.values[1] < -gyroError){
+            screenRotating = true;
+        }else if(event.values[2] > gyroError || event.values[2] < -gyroError){
+            screenRotating = true;
+        }else{
+            screenRotating = false;
+        }
     }
 
-    public void setMovementMinFrame(int frames) {movMinFrames = frames;}
-
-    public void setMovementMaxFrameSave(int frames){
-        MovementChecker.maxFrameSave = frames;
-    }
+    @Override
+    public void onAccuracyChanged(Sensor sensor, int accuracy) { }
 }

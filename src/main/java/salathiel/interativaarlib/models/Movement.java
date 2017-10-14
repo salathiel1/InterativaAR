@@ -5,9 +5,9 @@ package salathiel.interativaarlib.models;
  */
 public class Movement {
     private InteractiveObject io;
-    private float[] result;
+    private Float[] result;
 
-    public Movement(InteractiveObject io, float[] result) {
+    public Movement(InteractiveObject io, Float[] result) {
         this.io = io;
         this.result = result;
     }
@@ -20,11 +20,11 @@ public class Movement {
         this.io = io;
     }
 
-    public float[] getResult() {
+    public Float[] getResult() {
         return result;
     }
 
-    public void setResult(float[] result) {
+    public void setResult(Float[] result) {
         this.result = result;
     }
 }

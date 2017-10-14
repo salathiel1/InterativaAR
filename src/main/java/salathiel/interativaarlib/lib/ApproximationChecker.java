@@ -13,7 +13,7 @@ public class ApproximationChecker {
             for(InteractiveObject j : markers){
                 if( i.isVisible() && j.isVisible() && (!i.equals(j)) && i.getApproximationListener() != null){
                     if(i.getObjectPosition().distance(j.getObjectPosition()) < minDistance)
-                        i.getApproximationListener().markerNearby(j);
+                        i.getApproximationListener().iObjectNearby(j);
                 }
             }
         }

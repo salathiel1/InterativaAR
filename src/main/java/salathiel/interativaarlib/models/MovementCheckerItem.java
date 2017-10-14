@@ -11,13 +11,15 @@ public class MovementCheckerItem {
 
     private List<InteractiveObject> iobjects;
     private Mat cameraImage;
+    private Mat prevgray;
     private float[][] projectionMatrix;
     private int screenWidth;
     private int screenHeight;
 
-    public MovementCheckerItem(List<InteractiveObject> iobjects, Mat cameraImage, float[][] projectionMatrix, int screenWidth, int screenHeight) {
+    public MovementCheckerItem(List<InteractiveObject> iobjects, Mat cameraImage, Mat prevgray, float[][] projectionMatrix, int screenWidth, int screenHeight) {
         this.iobjects = iobjects;
         this.cameraImage = cameraImage;
+        this.prevgray = prevgray;
         this.projectionMatrix = projectionMatrix;
         this.screenWidth = screenWidth;
         this.screenHeight = screenHeight;
@@ -37,6 +39,14 @@ public class MovementCheckerItem {
 
     public void setCameraImage(Mat cameraImage) {
         this.cameraImage = cameraImage;
+    }
+
+    public Mat getPrevgray() {
+        return prevgray;
+    }
+
+    public void setPrevgray(Mat prevgray) {
+        this.prevgray = prevgray;
     }
 
     public float[][] getProjectionMatrix() {

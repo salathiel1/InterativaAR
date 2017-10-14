@@ -2,18 +2,12 @@ package salathiel.interativaarlib.lib;
 
 import android.util.Log;
 
-import org.opencv.core.Mat;
-
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
-import java.util.Queue;
 
-import salathiel.interativaarlib.models.InteractiveObject;
 import salathiel.interativaarlib.models.Movement;
 import salathiel.interativaarlib.models.MovementCheckerItem;
+import salathiel.interativaarlib.util.MovementCheckerUtil;
 
 /**
  * Created by salathiel on 29/09/17.
@@ -21,26 +15,20 @@ import salathiel.interativaarlib.models.MovementCheckerItem;
 
 public class MovementCheckerThread implements Runnable{
 
-    private static final int MAX_SIZE_QUEUE = 30;
-
-    private Queue<MovementCheckerItem> frames2Check;
-    private Map<InteractiveObject, Float[]> moves;
-    private Map<InteractiveObject, Integer> imoves;
+    private static final int MAX_SIZE_QUEUE = 10;
+    private List<MovementCheckerItem> frames2Check;
     private int skipFrame;
-    private Mat prevgray;
-    public int movFrames;
+    private int framei;
 
-    public MovementCheckerThread(int movFrames) {
-        this.movFrames = movFrames;
-        frames2Check = new LinkedList<>();
-        moves = new HashMap<>();
-        imoves = new HashMap<>();
+    public MovementCheckerThread() {
+        frames2Check = new ArrayList<>();
         skipFrame = 0;
-        prevgray = null;
+        framei = 0;
     }
 
     public void addFrame2Check(MovementCheckerItem mci){
-        frames2Check.add(mci);
+        if(frames2Check.size() < (MAX_SIZE_QUEUE*2))
+            frames2Check.add(mci);
     }
 
     public int getFrames2CheckSize(){
@@ -48,62 +36,26 @@ public class MovementCheckerThread implements Runnable{
     }
 
     //tavez seja preciso copiar parametros porque objs podem ser mudados dinamicamente
-    //implementar skip frame se fila ficar longa
     @Override
     public void run() {
         while(true) {
-            if(frames2Check.size() > MAX_SIZE_QUEUE) skipFrame++;
-            for(int i = 0; i < skipFrame; i++){
-                if(frames2Check.size() > 0) prevgray = frames2Check.remove().getCameraImage();
+            framei++;
+            if(framei == MAX_SIZE_QUEUE-skipFrame){
+                framei = 0;
+                if(frames2Check.size() > MAX_SIZE_QUEUE && skipFrame < (MAX_SIZE_QUEUE/2)) skipFrame++;
+
+                int sizeFrames2Remove = skipFrame;
+                for(int i = 1; i < frames2Check.size() && sizeFrames2Remove > 0; i+=2){
+                    sizeFrames2Remove--;
+                    frames2Check.remove(i);
+                }
             }
 
             if(frames2Check.size() > 0) {
-                MovementCheckerItem current = frames2Check.remove();
-                Movement mv = MovementChecker.checkMovement(current.getIobjects(), current.getCameraImage(), prevgray,
+                MovementCheckerItem current = frames2Check.remove(0);
+                Movement mv = MovementCheckerUtil.checkMovement(current.getIobjects(), current.getCameraImage(), current.getPrevgray(),
                         current.getProjectionMatrix(), current.getScreenWidth(), current.getScreenHeight());
-                prevgray = current.getCameraImage();
-
-                if(mv != null) {
-                    InteractiveObject io = mv.getIo();
-                    float result[] = mv.getResult();
-                    Float[] rio;
-
-                    if (moves.containsKey(io)) {
-                        rio = moves.get(io);
-                        rio[0] += result[0];
-                        rio[1] += result[1];
-                    } else {
-                        rio = new Float[2];
-                        rio[0] = result[0];
-                        rio[1] = result[1];
-                    }
-
-                    moves.put(io, rio);
-                    Integer movei;
-                    if(imoves.containsKey(io)) {
-                        movei = imoves.get(io);
-                        movei++;
-                    } else {
-                        movei = 0;
-                    }
-
-                    Log.v("movct", toString()+", "+movei+", "+movFrames);
-
-                    if (movei >= movFrames) {
-                        movei = 0;
-                        if (moves.containsKey(io)) {
-                            Float[] r = moves.get(io);
-                            if (r[0] != 0 || r[1] != 0) {
-                                if(r[0] != 0) r[0] = 1 / (r[0] > 0 ? r[0] + 1 : r[0] - 1 );
-                                if(r[1] != 0) r[1] = 1 / (r[1] > 0 ? r[1] + 1 : r[1] - 1 );
-                                io.getMovementListener().movement(r[0], r[1]);
-                            }
-                            moves.remove(io);
-                        }
-                    }
-                    imoves.put(io, movei);
-                }
-
+                if(mv != null) MovementChecker.sumMovement(mv);
             }else{
                 if(skipFrame > 0) skipFrame--;
                 try {
