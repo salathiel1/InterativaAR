@@ -5,6 +5,7 @@ import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.util.Log;
+import android.view.View;
 
 import org.opencv.android.OpenCVLoader;
 import org.opencv.core.CvType;
@@ -18,20 +19,16 @@ import salathiel.interativaarlib.models.MovementCheckerItem;
 import salathiel.interativaarlib.util.MatrixUtil;
 import salathiel.interativaarlib.util.MovementCheckerUtil;
 
-//padrao getinstance
 
 //classe principal, responsavel pela logica da lib
 public class InterativaLib implements SensorEventListener {
     private static final String TAG = "interativa";
-    private static final int MOVEMENT_THREADS = 20;
     private static InterativaLib instance;
 
     private List<InteractiveObject> iobjects;
     private float[][] projectionMatrix;
     private int screenWidth;
     private int screenHeight;
-    private MovementCheckerThread[] movimentThreads;
-    private int ithread;
     private boolean processFrame;
     private Mat prevgray;
     private Sensor gyroscopeSensor;
@@ -44,9 +41,7 @@ public class InterativaLib implements SensorEventListener {
         iobjects = new ArrayList<>();
         screenWidth = 0;
         screenHeight = 0;
-        movimentThreads = new MovementCheckerThread[MOVEMENT_THREADS];
-        ithread = 0;
-        processFrame = true;
+        processFrame = false;
         prevgray = null;
         screenRotating = false;
         gyroError = 0.03f;
@@ -128,29 +123,16 @@ public class InterativaLib implements SensorEventListener {
 
     public void update(){
         ApproximationChecker.checkApproximation(iobjects);
-        OcclusionChecker.checkOcclusion(iobjects);
     }
 
     public void update(Mat cameraImage){
         update();
-        if(screenRotating) return;
+        TouchChecker.getInstance().update(iobjects, projectionMatrix, screenWidth, screenHeight);
+        if(!screenRotating && processFrame) MovementChecker.checkMovement(iobjects, cameraImage, prevgray, projectionMatrix, screenWidth, screenHeight);
 
+        Log.v(TAG, screenRotating + ", " + processFrame);
         processFrame = !processFrame;
         if(!processFrame) prevgray = cameraImage;
-
-        if(cameraImage != null && (!cameraImage.empty()) && projectionMatrix != null
-                && screenWidth > 0 && screenHeight > 0 && processFrame) {
-            MovementCheckerItem mci = new MovementCheckerItem(iobjects, cameraImage, prevgray, projectionMatrix, screenWidth, screenHeight);
-            if(movimentThreads[ithread] == null){
-                movimentThreads[ithread] = new MovementCheckerThread();
-                movimentThreads[ithread].addFrame2Check(mci);
-                new Thread(movimentThreads[ithread]).start();
-            }else{
-                movimentThreads[ithread].addFrame2Check(mci);
-                Log.v("fila", "acumulado de "+ithread+": "+movimentThreads[ithread].getFrames2CheckSize());
-            }
-            ithread = (ithread+1) % MOVEMENT_THREADS;
-        }
     }
 
     public void update(byte[] cameraImage){
@@ -180,6 +162,10 @@ public class InterativaLib implements SensorEventListener {
 
     public void setGyroError(float gyroError) {
         this.gyroError = gyroError;
+    }
+
+    public View.OnTouchListener getViewTouchListener(){
+        return TouchChecker.getInstance();
     }
 
     @Override

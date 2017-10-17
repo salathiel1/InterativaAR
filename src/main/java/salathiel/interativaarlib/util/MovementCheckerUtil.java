@@ -60,7 +60,7 @@ public class MovementCheckerUtil {
                 double dy = fxy[1];
                 if(Math.abs(dx) >= MIN_INTEN_V || Math.abs(dy) >= MIN_INTEN_V){
                     Point p2 = new Point((int) x + fxy[0], (int) y + fxy[1]);
-                    if(lineIntersectsRect(new Point(x,y), p2, new Rect(roiRectp1, roiRectp2))) {
+                    if(ScreenCalcUtil.lineIntersectsRect(new Point(x,y), p2, new Rect(roiRectp1, roiRectp2))) {
                         Imgproc.arrowedLine(gray, new Point(x, y), p2, new Scalar(0, 0, 0));
                         intersectRoi = true;
                     }else{
@@ -95,50 +95,6 @@ public class MovementCheckerUtil {
         return v_result;
     }
 
-    private static boolean lineIntersectsRect(Point p1, Point p2, Rect r)
-    {
-        return lineIntersectsLine(p1, p2, new Point(r.x, r.y), new Point(r.x + r.width, r.y)) ||
-                lineIntersectsLine(p1, p2, new Point(r.x + r.width, r.y), new Point(r.x + r.width, r.y + r.height)) ||
-                lineIntersectsLine(p1, p2, new Point(r.x + r.width, r.y + r.height), new Point(r.x, r.y + r.height)) ||
-                lineIntersectsLine(p1, p2, new Point(r.x, r.y + r.height),new Point(r.x, r.y)) ||
-                (r.contains(p1) && r.contains(p2));
-    }
-
-    private static boolean lineIntersectsLine(Point l1p1, Point l1p2, Point l2p1, Point l2p2)
-    {
-        double q = (l1p1.y - l2p1.y) * (l2p2.x - l2p1.x) - (l1p1.x - l2p1.x) * (l2p2.y - l2p1.y);
-        double d = (l1p2.x - l1p1.x) * (l2p2.y - l2p1.y) - (l1p2.y - l1p1.y) * (l2p2.x - l2p1.x);
-
-        if( d == 0 )
-        {
-            return false;
-        }
-
-        double r = q / d;
-
-        q = (l1p1.y - l2p1.y) * (l1p2.x - l1p1.x) - (l1p1.x - l2p1.x) * (l1p2.y - l1p1.y);
-        double s = q / d;
-
-        if( r < 0 || r > 1 || s < 0 || s > 1 )
-        {
-            return false;
-        }
-
-        return true;
-    }
-
-    //converte os pontos 3d do objeto em pontos 2d
-    private static int[][] calc2dPoints(InteractiveObject iobject, float[][] projectionMatrix, int width, int height){
-        float[] pos1 = new float[]{-1, 1, 0, 1};
-        float[] pos2 = new float[]{1, -1, 0, 1};
-        pos1 = MatrixUtil.convert2d(pos1, iobject.getTransformationMatrix(), projectionMatrix, width, height);
-        pos2 = MatrixUtil.convert2d(pos2, iobject.getTransformationMatrix(), projectionMatrix, width, height);
-        return new int[][]{
-                {(int)pos1[0], (int)pos1[1]},
-                {(int)pos2[0], (int)pos2[1]}
-        };
-    }
-
     //checa se algum movimento occorreu
     public static Movement checkMovement(List<InteractiveObject> iobjects, Mat camera, Mat prevgray, float[][] projectionMatrix, int width, int height){
         if( prevgray != null && !prevgray.empty() )
@@ -152,28 +108,17 @@ public class MovementCheckerUtil {
                     else
                         gray = camera;
 
-                    int[][] points2d = calc2dPoints(io, projectionMatrix, width, height);
+                    int[][] points2d = ScreenCalcUtil.calcScreenRect(io, projectionMatrix, width, height);
 
                     if(points2d[0][0] < 0 || points2d[0][1] < 0 || points2d[1][0] < 0 || points2d[1][1] < 0) continue;
                     if(points2d[0][0] > gray.cols() || points2d[1][0] > gray.cols()) continue;
                     if(points2d[0][1] > gray.rows() || points2d[1][1] > gray.rows()) continue;
 
                     int x1,x2,y1,y2;
-                    if(points2d[0][0] < points2d[1][0]) {
-                        x1 = points2d[0][0];
-                        x2 = points2d[1][0];
-                    }else{
-                        x1 = points2d[1][0];
-                        x2 = points2d[0][0];
-                    }
-
-                    if(points2d[0][1] < points2d[1][1]){
-                        y1 = points2d[0][1];
-                        y2 = points2d[1][1];
-                    }else{
-                        y1 = points2d[1][1];
-                        y2 = points2d[0][1];
-                    }
+                    x1 = points2d[0][0];
+                    x2 = points2d[1][0];
+                    y1 = points2d[0][1];
+                    y2 = points2d[1][1];
 
                     int roix1, roix2, compx2, compx1, roiy1, roiy2, compy1, compy2;
                     roix1 = x1;
