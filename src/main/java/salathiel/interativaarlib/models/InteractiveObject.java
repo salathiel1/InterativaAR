@@ -2,7 +2,9 @@ package salathiel.interativaarlib.models;
 
 import salathiel.interativaarlib.api.ApproximationListener;
 import salathiel.interativaarlib.api.MovementListener;
+import salathiel.interativaarlib.api.OcclusionListener;
 import salathiel.interativaarlib.api.TouchListener;
+import salathiel.interativaarlib.lib.OcclusionChecker;
 import salathiel.interativaarlib.util.MatrixUtil;
 
 public class InteractiveObject {
@@ -15,6 +17,7 @@ public class InteractiveObject {
     private ApproximationListener approximationListener;
     private MovementListener movementListener;
     private TouchListener touchListener;
+    private OcclusionListener occlusionListener;
 
     public InteractiveObject(int id){
         this.id = id;
@@ -135,6 +138,14 @@ public class InteractiveObject {
 
     public void setTouchListener(TouchListener touchListener) {
         this.touchListener = touchListener;
+    }
+
+    public OcclusionListener getOcclusionListener() {
+        return occlusionListener;
+    }
+
+    public void setOcclusionListener(OcclusionListener occlusionListener) {
+        this.occlusionListener = occlusionListener;
     }
 
     @Override

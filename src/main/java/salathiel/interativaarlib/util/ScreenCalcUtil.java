@@ -1,5 +1,9 @@
 package salathiel.interativaarlib.util;
 
+import android.util.Log;
+
+import org.opencv.core.CvException;
+import org.opencv.core.Mat;
 import org.opencv.core.Point;
 import org.opencv.core.Rect;
 
@@ -75,5 +79,11 @@ public class ScreenCalcUtil {
 
     public static boolean pointInsideRect(Point p, Point r1, Point r2){
         return (p.x >= r1.x) && (p.x <= r2.x) && (p.y >= r1.y) && (p.y <= r2.y);
+    }
+
+    public static Mat getROIObject(InteractiveObject iObject, Mat cameraImage, float[][] projectionMatrix, int width, int height) throws CvException{
+        int[][] screenPos = calcScreenRect(iObject, projectionMatrix, width, height);
+        Log.v("screen", screenPos[0][0] + "," + screenPos[0][1] + "," + screenPos[1][0] + "," + screenPos[1][1]);
+        return cameraImage.submat(screenPos[0][1], screenPos[1][1], screenPos[0][0], screenPos[1][0]);
     }
 }

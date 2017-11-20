@@ -105,8 +105,10 @@ public class MovementCheckerUtil {
                     Mat flow = new Mat();
                     if(camera.channels() == 3)
                         Imgproc.cvtColor(camera, gray, Imgproc.COLOR_BGR2GRAY);
-                    else
+                    else if(camera.channels() == 1)
                         gray = camera;
+                    else
+                        throw new CvException("Camera image need to be gray or RGB");
 
                     int[][] points2d = ScreenCalcUtil.calcScreenRect(io, projectionMatrix, width, height);
 

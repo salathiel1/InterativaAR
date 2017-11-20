@@ -128,9 +128,9 @@ public class InterativaLib implements SensorEventListener {
     public void update(Mat cameraImage){
         update();
         TouchChecker.getInstance().update(iobjects, projectionMatrix, screenWidth, screenHeight);
+        OcclusionChecker.checkOcclusion(iobjects, cameraImage, projectionMatrix, screenWidth, screenHeight);
         if(!screenRotating && processFrame) MovementChecker.checkMovement(iobjects, cameraImage, prevgray, projectionMatrix, screenWidth, screenHeight);
 
-        Log.v(TAG, screenRotating + ", " + processFrame);
         processFrame = !processFrame;
         if(!processFrame) prevgray = cameraImage;
     }
