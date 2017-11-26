@@ -1,5 +1,7 @@
 package salathiel.interativaarlib.util;
 
+import salathiel.interativaarlib.exception.InterativaException;
+
 /**
  * Created by salathiel on 23/09/17.
  */
@@ -87,15 +89,18 @@ public class MatrixUtil {
         return normal;
     }
 
-    public static float[] convert2d(float[] pos, float[][] transformationMatrix, float[][] projectionMatrix, int screenWidth, int screenHeight)
+    public static int[] convert2d(int[] position3d, float[][] transformationMatrix, float[][] projectionMatrix, int screenWidth, int screenHeight) throws InterativaException
     {
         float[][] mpro = projectionMatrix;
         float[][] mtra = transformationMatrix;
+        float[] pos = {position3d[0], position3d[1], position3d[2], position3d[3]};
         pos = multiply(pos, mtra);
         pos = multiply(pos, mpro);
         pos = normalize(pos);
         pos[0] = (float) (screenWidth * (pos[0] + 1.0) / 2.0);
         pos[1] = (float) (screenHeight * (1.0 - ((pos[1] + 1.0) / 2.0)));
-        return pos;
+        if(pos[0] < 0 || pos[0] > screenWidth || pos[1] < 0 || pos[1] > screenHeight)
+            throw new InterativaException("Invalid conversion of 3d to 2d position");
+        return new int[]{(int)pos[0], (int)pos[1]};
     }
 }

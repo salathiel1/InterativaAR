@@ -12,6 +12,7 @@ import org.opencv.core.Rect;
 
 import java.util.List;
 
+import salathiel.interativaarlib.exception.InterativaException;
 import salathiel.interativaarlib.models.InteractiveObject;
 import salathiel.interativaarlib.util.ScreenCalcUtil;
 
@@ -48,7 +49,12 @@ public class TouchChecker implements View.OnTouchListener{
 
         for(InteractiveObject iObj : interactiveObjects){
             if(iObj.getTouchListener() != null && iObj.isVisible()){
-                int[][] screenPosObj = ScreenCalcUtil.calcScreenRect(iObj, projectionMatrix, width, height);
+                int[][] screenPosObj;
+                try {
+                    screenPosObj = ScreenCalcUtil.calcScreenRect(iObj, projectionMatrix, width, height);
+                } catch (InterativaException e) {
+                    continue;
+                }
 
                 int tx = (int) (event.getX() * width) / v.getWidth();
                 int ty = (int) (event.getY() * height) / v.getHeight();

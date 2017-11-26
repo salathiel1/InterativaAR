@@ -19,6 +19,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.List;
 
+import salathiel.interativaarlib.exception.InterativaException;
 import salathiel.interativaarlib.models.InteractiveObject;
 import salathiel.interativaarlib.models.Movement;
 import salathiel.interativaarlib.util.MatrixUtil;
@@ -103,14 +104,21 @@ public class MovementCheckerUtil {
                 if(io.getMovementListener() != null && io.isVisible()) {
                     Mat gray = new Mat();
                     Mat flow = new Mat();
-                    if(camera.channels() == 3)
-                        Imgproc.cvtColor(camera, gray, Imgproc.COLOR_BGR2GRAY);
-                    else if(camera.channels() == 1)
+                    if(camera.type() == 16) //rgb
+                        Imgproc.cvtColor(camera, gray, Imgproc.COLOR_RGB2GRAY);
+                    else if(camera.type() == 24) //rgba
+                        Imgproc.cvtColor(camera, gray, Imgproc.COLOR_RGBA2GRAY);
+                    else if(camera.type() == 0)
                         gray = camera;
                     else
-                        throw new CvException("Camera image need to be gray or RGB");
+                        throw new CvException("Camera image need to be gray, RGB or RGBA");
 
-                    int[][] points2d = ScreenCalcUtil.calcScreenRect(io, projectionMatrix, width, height);
+                    int[][] points2d;
+                    try {
+                        points2d = ScreenCalcUtil.calcScreenRect(io, projectionMatrix, width, height);
+                    } catch (InterativaException e) {
+                        continue;
+                    }
 
                     if(points2d[0][0] < 0 || points2d[0][1] < 0 || points2d[1][0] < 0 || points2d[1][1] < 0) continue;
                     if(points2d[0][0] > gray.cols() || points2d[1][0] > gray.cols()) continue;
@@ -178,7 +186,7 @@ public class MovementCheckerUtil {
                     Float[] result = calcMovement(flow, ROIgray, 10, p1Roi, p2Roi);
 
                     if(framesave > maxFrameSave) {
-                        saveMat(ROIgray);
+                        saveMat(ROIgray, "mov");
                         framesave = 0;
                     }
                     framesave++;
@@ -191,7 +199,7 @@ public class MovementCheckerUtil {
         return null;
     }
 
-    static void saveMat(Mat subimg){
+    public static void saveMat(Mat subimg, String name){
         Bitmap bmp = null;
         try {
             bmp = Bitmap.createBitmap(subimg.cols(), subimg.rows(), Bitmap.Config.ARGB_8888);
@@ -200,9 +208,8 @@ public class MovementCheckerUtil {
             Log.d("Erro", e.getMessage());
         }
 
-        subimg.release();
         FileOutputStream out = null;
-        String filename = "frame"+idframe+".png";
+        String filename = idframe+name+".png";
         idframe++;
 
         File sd = new File(Environment.getExternalStorageDirectory() + "/frames");

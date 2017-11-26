@@ -128,7 +128,7 @@ public class InterativaLib implements SensorEventListener {
     public void update(Mat cameraImage){
         update();
         TouchChecker.getInstance().update(iobjects, projectionMatrix, screenWidth, screenHeight);
-        OcclusionChecker.checkOcclusion(iobjects, cameraImage, projectionMatrix, screenWidth, screenHeight);
+        if(processFrame) OcclusionChecker.checkOcclusion(iobjects, cameraImage, projectionMatrix, screenWidth, screenHeight);
         if(!screenRotating && processFrame) MovementChecker.checkMovement(iobjects, cameraImage, prevgray, projectionMatrix, screenWidth, screenHeight);
 
         processFrame = !processFrame;
@@ -162,6 +162,10 @@ public class InterativaLib implements SensorEventListener {
 
     public void setGyroError(float gyroError) {
         this.gyroError = gyroError;
+    }
+
+    public void setOcclusionRigor(double rigor){
+        OcclusionChecker.MIN_SIMILARITY = rigor;
     }
 
     public View.OnTouchListener getViewTouchListener(){
