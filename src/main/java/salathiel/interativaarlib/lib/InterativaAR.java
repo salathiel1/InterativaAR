@@ -10,20 +10,19 @@ import android.view.View;
 import org.opencv.android.OpenCVLoader;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
+import org.opencv.imgproc.Imgproc;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import salathiel.interativaarlib.models.InteractiveObject;
-import salathiel.interativaarlib.models.MovementCheckerItem;
 import salathiel.interativaarlib.util.MatrixUtil;
 import salathiel.interativaarlib.util.MovementCheckerUtil;
 
 
-//classe principal, responsavel pela logica da lib
-public class InterativaLib implements SensorEventListener {
+public class InterativaAR implements SensorEventListener {
+    public static boolean debugMode = false;
     private static final String TAG = "interativa";
-    private static InterativaLib instance;
 
     private List<InteractiveObject> iobjects;
     private float[][] projectionMatrix;
@@ -35,7 +34,7 @@ public class InterativaLib implements SensorEventListener {
     private boolean screenRotating;
     private float gyroError;
 
-    public InterativaLib(){
+    public InterativaAR(){
         if(OpenCVLoader.initDebug()) Log.d(TAG, "Ok!");
         else Log.d(TAG, "Error!");
         iobjects = new ArrayList<>();
@@ -47,17 +46,11 @@ public class InterativaLib implements SensorEventListener {
         gyroError = 0.03f;
     }
 
-    public InterativaLib(float[][] projectionMatrix, int screenWidth, int screenHeight){
+    public InterativaAR(float[][] projectionMatrix, int screenWidth, int screenHeight){
         this();
         this.projectionMatrix = projectionMatrix;
         this.screenWidth = screenWidth;
         this.screenHeight = screenHeight;
-    }
-
-    public static synchronized InterativaLib getInstance(){
-        if(instance == null)
-            instance = new InterativaLib();
-        return instance;
     }
 
     public List<InteractiveObject> getIobjects() {
@@ -123,11 +116,11 @@ public class InterativaLib implements SensorEventListener {
 
     public void update(){
         ApproximationChecker.checkApproximation(iobjects);
+        TouchChecker.getInstance().update(iobjects, projectionMatrix, screenWidth, screenHeight);
     }
 
     public void update(Mat cameraImage){
         update();
-        TouchChecker.getInstance().update(iobjects, projectionMatrix, screenWidth, screenHeight);
         if(processFrame) OcclusionChecker.checkOcclusion(iobjects, cameraImage, projectionMatrix, screenWidth, screenHeight);
         if(!screenRotating && processFrame) MovementChecker.checkMovement(iobjects, cameraImage, prevgray, projectionMatrix, screenWidth, screenHeight);
 
@@ -137,9 +130,13 @@ public class InterativaLib implements SensorEventListener {
 
     public void update(byte[] cameraImage){
         if(screenWidth > 0 && screenHeight > 0) {
-            Mat mat = new Mat(screenHeight, screenWidth, CvType.CV_8UC1);
-            mat.put(0, 0, cameraImage);
-            update(mat);
+            Mat mYuv = new Mat(screenHeight + screenHeight / 2, screenWidth, CvType.CV_8UC1);
+            mYuv.put(0, 0, cameraImage);
+            Mat mRgba = new Mat();
+
+            Imgproc.cvtColor(mYuv, mRgba, Imgproc.COLOR_YUV2RGBA_NV21, 4);
+
+            update(mRgba);
         }
     }
 
@@ -151,8 +148,8 @@ public class InterativaLib implements SensorEventListener {
         MovementCheckerUtil.winsize = rigor;
     }
 
-    public void setDebugMovementMaxFrameSave(int frames){
-        MovementCheckerUtil.maxFrameSave = frames;
+    public void setDebugMode(boolean d){
+        debugMode = d;
     }
 
     public void useGyroMovement(SensorManager sensorManager){
@@ -165,7 +162,7 @@ public class InterativaLib implements SensorEventListener {
     }
 
     public void setOcclusionRigor(double rigor){
-        OcclusionChecker.MIN_SIMILARITY = rigor;
+        OcclusionChecker.RIGOR = rigor;
     }
 
     public View.OnTouchListener getViewTouchListener(){

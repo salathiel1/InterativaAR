@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.util.List;
 
 import salathiel.interativaarlib.exception.InterativaException;
+import salathiel.interativaarlib.lib.InterativaAR;
 import salathiel.interativaarlib.models.InteractiveObject;
 import salathiel.interativaarlib.models.Movement;
 import salathiel.interativaarlib.util.MatrixUtil;
@@ -30,11 +31,11 @@ import salathiel.interativaarlib.util.MatrixUtil;
 public class MovementCheckerUtil {
 
     //minimo de intensidade nescessaria para que o vetor de movimentacao seja considerado
-    public static final int MIN_INTEN_V = 8;
+    public static final int MIN_INTEN_V = 1;
     public static final int MIN_SIZE_ROI = 300;
 
     public static int winsize=16;
-    public static int maxFrameSave = 10;
+    //public static int maxFrameSave = 10;
 
     private static int framesave = 0;
     private static int idframe = 0;
@@ -91,7 +92,7 @@ public class MovementCheckerUtil {
                 v_result[1] = -ivny;
         }
 
-        Log.v("movf", v_result[0]+", "+v_result[1]);
+        if(InterativaAR.debugMode) Log.v("movf", v_result[0]+", "+v_result[1]);
 
         return v_result;
     }
@@ -102,21 +103,16 @@ public class MovementCheckerUtil {
         {
             for(InteractiveObject io : iobjects) {
                 if(io.getMovementListener() != null && io.isVisible()) {
-                    Mat gray = new Mat();
+                    Mat gray = mat2Gray(camera);
+                    prevgray = mat2Gray(prevgray);
                     Mat flow = new Mat();
-                    if(camera.type() == 16) //rgb
-                        Imgproc.cvtColor(camera, gray, Imgproc.COLOR_RGB2GRAY);
-                    else if(camera.type() == 24) //rgba
-                        Imgproc.cvtColor(camera, gray, Imgproc.COLOR_RGBA2GRAY);
-                    else if(camera.type() == 0)
-                        gray = camera;
-                    else
-                        throw new CvException("Camera image need to be gray, RGB or RGBA");
+
 
                     int[][] points2d;
                     try {
                         points2d = ScreenCalcUtil.calcScreenRect(io, projectionMatrix, width, height);
                     } catch (InterativaException e) {
+                        if(InterativaAR.debugMode) Log.e("mov", e.getMessage());
                         continue;
                     }
 
@@ -185,11 +181,14 @@ public class MovementCheckerUtil {
                     Point p2Roi = new Point(x2-roix1, y2-roiy1);
                     Float[] result = calcMovement(flow, ROIgray, 10, p1Roi, p2Roi);
 
-                    if(framesave > maxFrameSave) {
-                        saveMat(ROIgray, "mov");
-                        framesave = 0;
+                    if(InterativaAR.debugMode) {
+                        if (framesave > 10) {
+                            saveMat(ROIgray, "mov");
+                            framesave = 0;
+                        }
+                        framesave++;
                     }
-                    framesave++;
+
 
                     return new Movement(io, result);
                 }
@@ -197,6 +196,19 @@ public class MovementCheckerUtil {
         }
 
         return null;
+    }
+
+    private static Mat mat2Gray(Mat mat){
+        Mat gray = new Mat();
+        if(mat.type() == 16) //rgb
+            Imgproc.cvtColor(mat, gray, Imgproc.COLOR_RGB2GRAY);
+        else if(mat.type() == 24) //rgba
+            Imgproc.cvtColor(mat, gray, Imgproc.COLOR_RGBA2GRAY);
+        else if(mat.type() == 0)
+            gray = mat;
+        else
+            throw new CvException("Camera image need to be gray, RGB or RGBA");
+        return gray;
     }
 
     public static void saveMat(Mat subimg, String name){

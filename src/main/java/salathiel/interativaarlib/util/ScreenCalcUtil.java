@@ -19,11 +19,19 @@ public class ScreenCalcUtil {
 
     //converte os pontos 3d do objeto em pontos 2d
     public static int[][] calcScreenRect(InteractiveObject iobject, float[][] projectionMatrix, int width, int height) throws InterativaException{
-        int[] pos1 = new int[]{-1, 1, 0, 1};
-        int[] pos2 = new int[]{1, -1, 0, 1};
-        pos1 = MatrixUtil.convert2d(pos1, iobject.getTransformationMatrix(), projectionMatrix, width, height);
-        pos2 = MatrixUtil.convert2d(pos2, iobject.getTransformationMatrix(), projectionMatrix, width, height);
-
+        int[] pos1;
+        int[] pos2;
+        try {
+            float[] fpos1 = new float[]{-1f, 1f, 0, 1};
+            float[] fpos2 = new float[]{1f, -1f, 0, 1};
+            pos1 = MatrixUtil.convert2d(fpos1, iobject.getTransformationMatrix(), projectionMatrix, width, height);
+            pos2 = MatrixUtil.convert2d(fpos2, iobject.getTransformationMatrix(), projectionMatrix, width, height);
+        }catch (InterativaException e){
+            float[] fpos1 = new float[]{-0.8f, 0.8f, 0, 1};
+            float[] fpos2 = new float[]{0.8f, -0.8f, 0, 1};
+            pos1 = MatrixUtil.convert2d(fpos1, iobject.getTransformationMatrix(), projectionMatrix, width, height);
+            pos2 = MatrixUtil.convert2d(fpos2, iobject.getTransformationMatrix(), projectionMatrix, width, height);
+        }
         float x1,x2,y1,y2;
 
         if(pos1[0] < pos2[0]) {

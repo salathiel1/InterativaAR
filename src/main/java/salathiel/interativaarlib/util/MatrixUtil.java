@@ -89,7 +89,7 @@ public class MatrixUtil {
         return normal;
     }
 
-    public static int[] convert2d(int[] position3d, float[][] transformationMatrix, float[][] projectionMatrix, int screenWidth, int screenHeight) throws InterativaException
+    public static int[] convert2d(float[] position3d, float[][] transformationMatrix, float[][] projectionMatrix, int screenWidth, int screenHeight) throws InterativaException
     {
         float[][] mpro = projectionMatrix;
         float[][] mtra = transformationMatrix;
@@ -99,8 +99,8 @@ public class MatrixUtil {
         pos = normalize(pos);
         pos[0] = (float) (screenWidth * (pos[0] + 1.0) / 2.0);
         pos[1] = (float) (screenHeight * (1.0 - ((pos[1] + 1.0) / 2.0)));
-        if(pos[0] < 0 || pos[0] > screenWidth || pos[1] < 0 || pos[1] > screenHeight)
-            throw new InterativaException("Invalid conversion of 3d to 2d position");
+        if(pos[0] < 0 || Math.floor(pos[0]) > screenWidth || pos[1] < 0 || Math.floor(pos[1]) > screenHeight)
+            throw new InterativaException("Invalid conversion of 3d to 2d position (" + pos[0] + "," + pos[1] + ")");
         return new int[]{(int)pos[0], (int)pos[1]};
     }
 }

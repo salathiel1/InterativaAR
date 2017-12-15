@@ -113,7 +113,27 @@ public class InteractiveObject {
 	public void scale(Vector3D s) {
 		scale(s.getX(), s.getY(), s.getZ());
 	}
-	
+
+    public void rotate(float x, float y, float z, float angle) {
+        float m = (float) Math.sqrt((x*x) + (y*y) + (z*z));
+        x = x / m;
+        y = y / m;
+        z = z / m;
+        float c = (float) Math.cos(angle);
+        float s = (float) Math.sin(angle);
+        float[][] mrotate = new float[][]{
+                {x*x*(1-c)+c, x*y*(1-c)-z*s, x*z*(1-c)+y*s, 0},
+                {y*x*(1-c)+z*s, y*y*(1-c)+c, y*z*(1-c)-x*s, 0},
+                {x*z*(1-c)-y*s, y*z*(1-c)+x*s, z*z*(1-c)+c, 0},
+                {0, 0, 0, 1}
+        };
+        transformationMatrix = MatrixUtil.multiply(transformationMatrix, mrotate);
+    }
+
+    public void rotate(Vector3D r, float angle){
+        rotate(r.getX(), r.getY(), r.getZ(), angle);
+    }
+
 
     //gets e sets dos listeners
     public ApproximationListener getApproximationListener(){

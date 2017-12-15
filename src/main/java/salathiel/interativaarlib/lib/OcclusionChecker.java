@@ -27,9 +27,10 @@ import salathiel.interativaarlib.util.ScreenCalcUtil;
  */
 public class OcclusionChecker {
 
-    public static double MIN_SIMILARITY = 0.01;
+    public static double RIGOR = 0.0;
+    private static double MIN_SIMILARITY;
 
-    private static final int FRAMES_SKIP_INI = 90;
+    private static final int FRAMES_SKIP_INI = 30;
     private static final int FRAMES_CALC_OCCLUSION = 5;
     private static int iFramesSkip = 0;
     private static Map<InteractiveObject, Mat> baseBackgrounds = new HashMap<>();
@@ -52,7 +53,7 @@ public class OcclusionChecker {
 
                 if(baseBackgrounds.containsKey(iObj) && objectPressed.containsKey(iObj)) {
                     boolean hasPressed = objectPressed.get(iObj);
-                    boolean ioclusion = calOcclusion(ROIobj, baseBackgrounds.get(iObj), cameraImage, projectionMatrix, width, height);
+                    boolean ioclusion = calOcclusion(ROIobj, baseBackgrounds.get(iObj), iObj.getId(), cameraImage, projectionMatrix, width, height);
 
                     ArrayList<Boolean> framesOclusion;
                     if(objectFramesToCalc.containsKey(iObj)){
@@ -71,7 +72,7 @@ public class OcclusionChecker {
 
                     int countTrue = 0;
                     int countFalse = 0;
-                    Log.v("framesOc", Arrays.toString(framesOclusion.toArray()));
+                    if(InterativaAR.debugMode) Log.v("framesOc"+ iObj.getId(), Arrays.toString(framesOclusion.toArray()));
                     for(Boolean oc : framesOclusion){
                         if(oc == true) countTrue++;
                         else countFalse++;
@@ -81,8 +82,11 @@ public class OcclusionChecker {
 
                     objectFramesToCalc.remove(iObj);
 
-                    Log.v("touc oclusion", ""+oclusion);
-                    Log.v("touc has", ""+hasPressed);
+                    if(InterativaAR.debugMode){
+                        Log.v("touc oclusion" + iObj.getId(), "" + oclusion);
+                        Log.v("touc has" + iObj.getId(), "" + hasPressed);
+                    }
+
                     if (oclusion == true) {
                         if (hasPressed == false)
                             iObj.getOcclusionListener().occlusionEnter();
@@ -104,11 +108,13 @@ public class OcclusionChecker {
 
     }
 
-    private static boolean calOcclusion(Mat ROIobj, Mat ROIbase, Mat cameraImage, float[][] projectionMatrix, int width, int height){
-        isave++;
-        if(isave > 10) {
-            MovementCheckerUtil.saveMat(ROIbase, "base");
-            MovementCheckerUtil.saveMat(ROIobj, "atual");
+    private static boolean calOcclusion(Mat ROIobj, Mat ROIbase, int id, Mat cameraImage, float[][] projectionMatrix, int width, int height){
+        if(InterativaAR.debugMode) {
+            isave++;
+            if (isave > 10) {
+                MovementCheckerUtil.saveMat(ROIbase, "base" + id);
+                MovementCheckerUtil.saveMat(ROIobj, "atual" + id);
+            }
         }
 
 
@@ -123,19 +129,22 @@ public class OcclusionChecker {
 
         double similarity = Imgproc.compareHist(histBase, histObj, 0);
 
-        if(isave > 10) {
-            MovementCheckerUtil.saveMat(new Mat(10, 10, CvType.CV_8U, new Scalar(0)), ""+(similarity < MIN_SIMILARITY));
-            isave = 0;
-        }
+        MIN_SIMILARITY = 0 - RIGOR;
 
-        Log.v("touch", "" + similarity);
+        if(InterativaAR.debugMode) {
+            if (isave > 10) {
+                MovementCheckerUtil.saveMat(new Mat(10, 10, CvType.CV_8U, new Scalar(0)), "" + (similarity < MIN_SIMILARITY) + "" + id);
+                isave = 0;
+            }
+            Log.v("touch" + id, "" + similarity + " < " + MIN_SIMILARITY + " (" + RIGOR);
+        }
 
         return similarity < MIN_SIMILARITY;
     }
 
     private static Mat convert2HSV(Mat imagem){
         Mat mat = imagem.clone();
-        Log.v("type", ""+mat.type());
+        if(InterativaAR.debugMode) Log.v("type", ""+mat.type());
         if(mat.type() == 16) Imgproc.cvtColor(mat, mat, Imgproc.COLOR_RGB2HSV);
         else if(mat.type() == 24){
             Imgproc.cvtColor(mat, mat, Imgproc.COLOR_RGBA2BGR);

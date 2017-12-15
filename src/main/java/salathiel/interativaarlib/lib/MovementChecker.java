@@ -35,7 +35,6 @@ public class MovementChecker {
                 new Thread(movimentThreads[ithread]).start();
             }else{
                 movimentThreads[ithread].addFrame2Check(mci);
-                Log.v("fila", "acumulado de "+ithread+": "+movimentThreads[ithread].getFrames2CheckSize());
             }
             ithread = (ithread+1) % MOVEMENT_THREADS;
         }

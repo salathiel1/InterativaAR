@@ -44,7 +44,7 @@ public class TouchChecker implements View.OnTouchListener{
 
     @Override
     public boolean onTouch(View v, MotionEvent event) {
-        if(interactiveObjects == null || projectionMatrix == null || width <= 0 || height <= 0)
+        if(interactiveObjects == null || projectionMatrix == null || width <= 0 || height <= 0 && event.getAction() == MotionEvent.ACTION_DOWN)
             return false;
 
         for(InteractiveObject iObj : interactiveObjects){
@@ -62,7 +62,7 @@ public class TouchChecker implements View.OnTouchListener{
                 Point touchPoint = new Point(tx, ty);
                 Point r1 = new Point(screenPosObj[0][0], screenPosObj[0][1]);
                 Point r2 = new Point(screenPosObj[1][0], screenPosObj[1][1]);
-                Log.v("touch", touchPoint + "," + r1 + ", " + r2);
+                //Log.v("touch", touchPoint + "," + r1 + ", " + r2);
                 if(ScreenCalcUtil.pointInsideRect(touchPoint, r1, r2))
                     iObj.getTouchListener().touched();
 
